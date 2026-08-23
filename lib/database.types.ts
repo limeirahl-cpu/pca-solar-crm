@@ -249,6 +249,129 @@ export type Instalacao = {
   updated_at: string;
 };
 
+export type OrdemServicoTipo = "manutencao" | "limpeza" | "garantia" | "ampliacao" | "vistoria" | "outro";
+
+export type OrdemServicoStatus = "aberta" | "agendada" | "em_andamento" | "concluida" | "cancelada";
+
+export type OrdemServicoPrioridade = "baixa" | "media" | "alta" | "urgente";
+
+export type OrdemServico = {
+  id: string;
+  owner_id: string;
+  numero: number;
+  client_id: string;
+  project_id: string | null;
+  plant_id: string | null;
+  tipo: OrdemServicoTipo;
+  titulo: string;
+  descricao: string | null;
+  status: OrdemServicoStatus;
+  prioridade: OrdemServicoPrioridade;
+  responsavel_id: string | null;
+  data_abertura: string;
+  data_agendada: string | null;
+  data_conclusao: string | null;
+  checklist: ChecklistItem[];
+  valor_servico: number | null;
+  forma_pagamento: string | null;
+  observacoes: string | null;
+  assinatura_cliente: string | null;
+  concluida_em: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ProductCategoria = "modulo" | "inversor" | "estrutura" | "cabo" | "conector" | "protecao" | "outro";
+
+export type Product = {
+  id: string;
+  owner_id: string;
+  codigo: string | null;
+  nome: string;
+  categoria: ProductCategoria;
+  unidade: string;
+  fornecedor_id: string | null;
+  estoque_atual: number;
+  estoque_minimo: number;
+  valor_unitario: number | null;
+  observacoes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type Supplier = {
+  id: string;
+  owner_id: string;
+  nome: string;
+  cnpj_cpf: string | null;
+  telefone: string | null;
+  email: string | null;
+  endereco: string | null;
+  cidade: string | null;
+  estado: string | null;
+  contato_nome: string | null;
+  observacoes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PurchaseStatus = "rascunho" | "enviado" | "aprovado" | "recebido" | "cancelado";
+
+export type PurchaseItem = {
+  produto_id: string;
+  produto_nome: string;
+  quantidade: number;
+  valor_unitario: number;
+  valor_total: number;
+};
+
+export type Purchase = {
+  id: string;
+  owner_id: string;
+  numero: number;
+  supplier_id: string | null;
+  status: PurchaseStatus;
+  data_pedido: string | null;
+  data_prevista_entrega: string | null;
+  data_recebimento: string | null;
+  itens: PurchaseItem[];
+  valor_total: number;
+  observacoes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type StockMovementTipo = "entrada" | "saida" | "ajuste";
+
+export type StockMovementMotivo = "compra" | "instalacao" | "devolucao" | "perda" | "ajuste_inventario" | "outro";
+
+export type StockMovement = {
+  id: string;
+  owner_id: string;
+  product_id: string;
+  tipo: StockMovementTipo;
+  quantidade: number;
+  motivo: StockMovementMotivo;
+  project_id: string | null;
+  purchase_id: string | null;
+  observacoes: string | null;
+  created_at: string;
+};
+
+export type StockReservationStatus = "reservada" | "consumida" | "cancelada";
+
+export type StockReservation = {
+  id: string;
+  owner_id: string;
+  product_id: string;
+  project_id: string | null;
+  quantidade: number;
+  status: StockReservationStatus;
+  observacoes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type Client = {
   id: string;
   owner_id: string;
@@ -453,6 +576,42 @@ export type Database = {
         Row: Instalacao;
         Insert: Partial<Instalacao>;
         Update: Partial<Instalacao>;
+        Relationships: [];
+      };
+      ordens_servico: {
+        Row: OrdemServico;
+        Insert: Partial<OrdemServico>;
+        Update: Partial<OrdemServico>;
+        Relationships: [];
+      };
+      products: {
+        Row: Product;
+        Insert: Partial<Product>;
+        Update: Partial<Product>;
+        Relationships: [];
+      };
+      suppliers: {
+        Row: Supplier;
+        Insert: Partial<Supplier>;
+        Update: Partial<Supplier>;
+        Relationships: [];
+      };
+      purchases: {
+        Row: Purchase;
+        Insert: Partial<Purchase>;
+        Update: Partial<Purchase>;
+        Relationships: [];
+      };
+      stock_movements: {
+        Row: StockMovement;
+        Insert: Partial<StockMovement>;
+        Update: Partial<StockMovement>;
+        Relationships: [];
+      };
+      stock_reservations: {
+        Row: StockReservation;
+        Insert: Partial<StockReservation>;
+        Update: Partial<StockReservation>;
         Relationships: [];
       };
     };

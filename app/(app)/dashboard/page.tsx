@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { FUNIL_STAGE_LABEL, FUNIL_STAGE_TONE } from "@/lib/funil";
+import { isEstoqueBaixo } from "@/lib/estoque";
 import type { Lead, Task } from "@/lib/database.types";
 
 const PLANT_STATUS_LABEL: Record<string, string> = {
@@ -16,10 +17,10 @@ const PLANT_STATUS_LABEL: Record<string, string> = {
 };
 
 const PROXIMOS_MODULOS = [
-  { label: "Financeiro", phase: "Fase 12" },
-  { label: "Estoque", phase: "Fase 10" },
-  { label: "Projetos & Homologação", phase: "Fases 6-7" },
-  { label: "Marketing", phase: "Fase 19" },
+  { label: "Financeiro", phase: "Fase 7" },
+  { label: "Pós-venda & monitoramento avançado", phase: "Fase 8" },
+  { label: "Marketing & IA", phase: "Fase 9" },
+  { label: "Integrações oficiais", phase: "Fase 10" },
 ];
 
 export default async function DashboardPage() {
@@ -45,6 +46,7 @@ export default async function DashboardPage() {
     { count: tarefasAtrasadas },
     { data: leadsRecentes },
     { data: tarefasProximas },
+    { data: produtos },
   ] = await Promise.all([
     supabase.from("leads").select("id", { count: "exact", head: true }).gte("created_at", hojeInicioIso),
     supabase.from("leads").select("id", { count: "exact", head: true }).gte("created_at", mesInicioIso),
@@ -77,6 +79,7 @@ export default async function DashboardPage() {
       .eq("concluida", false)
       .order("data_vencimento", { ascending: true })
       .limit(5),
+    supabase.from("products").select("id, estoque_atual, estoque_minimo, valor_unitario"),
   ]);
 
   const valorEmAberto = (orcamentosPendentes ?? []).reduce(
@@ -91,6 +94,15 @@ export default async function DashboardPage() {
   const usinasInativas = (plants ?? []).filter((p) => p.status === "inativa").length;
   const geracaoMesTotal = (geracaoMes ?? []).reduce(
     (sum, r: { geracao_kwh: number | null }) => sum + (r.geracao_kwh ?? 0),
+    0
+  );
+
+  const produtosList = produtos ?? [];
+  const produtosEstoqueBaixo = produtosList.filter((p) =>
+    isEstoqueBaixo(p.estoque_atual, p.estoque_minimo)
+  ).length;
+  const valorEmEstoque = produtosList.reduce(
+    (sum, p) => sum + p.estoque_atual * (p.valor_unitario ?? 0),
     0
   );
 
@@ -134,6 +146,19 @@ export default async function DashboardPage() {
           />
           <StatCard label="Tarefas pendentes" value={String(tarefasPendentes ?? 0)} />
           <StatCard label="Tarefas atrasadas" value={String(tarefasAtrasadas ?? 0)} />
+        </div>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">Estoque</h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard label="Produtos cadastrados" value={String(produtosList.length)} />
+          <StatCard
+            label="Estoque baixo"
+            value={String(produtosEstoqueBaixo)}
+            tone={produtosEstoqueBaixo > 0 ? "primary" : "default"}
+          />
+          <StatCard label="Valor em estoque" value={formatCurrency(valorEmEstoque)} tone="accent" />
         </div>
       </section>
 

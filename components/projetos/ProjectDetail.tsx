@@ -96,6 +96,9 @@ export function ProjectDetail({
                   <option key={s.value} value={s.value}>{s.label}</option>
                 ))}
               </Select>
+              <Link href={`/estoque/reservas?novo=1&project_id=${project.id}`}>
+                <Button size="sm" variant="outline">Reservar estoque</Button>
+              </Link>
               <Button size="sm" variant="outline" onClick={() => setEditing((v) => !v)}>
                 {editing ? "Fechar" : "Editar"}
               </Button>
