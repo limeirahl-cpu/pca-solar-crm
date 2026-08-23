@@ -2,6 +2,7 @@
 
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
 import { Input, Label } from "@/components/ui/Field";
@@ -35,26 +36,26 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen w-full">
-      {/* Painel de marca — troque o ícone abaixo pela imagem do mascote (public/mascote-pca.png)
-          quando o arquivo for enviado: <img src="/mascote-pca.png" className="h-64 w-auto" /> */}
-      <div className="relative hidden flex-1 flex-col justify-between bg-sidebar px-12 py-12 text-sidebar-foreground lg:flex">
-        <div className="flex items-center gap-2.5">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary text-lg text-primary-foreground">
-            ☀️
-          </span>
-          <span className="text-lg font-extrabold tracking-tight">
-            PCA<span className="text-primary"> SOLAR</span>
-          </span>
+      <div className="relative hidden flex-1 flex-col justify-between overflow-hidden bg-sidebar px-12 py-12 text-sidebar-foreground lg:flex">
+        <div className="relative h-10 w-10">
+          <Image src="/logo-pca.png" alt="PCA Solar" fill sizes="40px" className="object-contain object-left" />
         </div>
 
         <div className="flex flex-1 items-center justify-center">
-          <div className="flex size-56 items-center justify-center rounded-full bg-white/5 text-8xl">
-            ☀️
+          <div className="relative h-80 w-[213px] drop-shadow-2xl">
+            <Image
+              src="/mascote-pca.png"
+              alt="Mascote PCA Solar"
+              fill
+              sizes="213px"
+              className="object-contain"
+              priority
+            />
           </div>
         </div>
 
         <div className="max-w-sm">
-          <p className="text-2xl font-bold leading-tight">
+          <p className="text-2xl font-display font-bold leading-tight">
             Bem-vindo ao sistema da <span className="text-primary">PCA Solar</span>
           </p>
           <p className="mt-2 text-sm text-sidebar-foreground/70">{COMPANY.tagline}</p>
@@ -64,12 +65,9 @@ export default function LoginPage() {
       <div className="flex flex-1 flex-col items-center justify-center bg-background px-4 py-12">
         <div className="w-full max-w-sm">
           <div className="mb-6 text-center lg:hidden">
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-xl">
-              ☀️
+            <div className="relative mx-auto h-14 w-14">
+              <Image src="/logo-pca.png" alt="PCA Solar" fill sizes="56px" className="object-contain" />
             </div>
-            <h1 className="text-lg font-extrabold tracking-tight text-foreground">
-              PCA<span className="text-primary"> SOLAR</span>
-            </h1>
           </div>
 
           <h2 className="text-lg font-semibold text-foreground">Acessar o sistema</h2>

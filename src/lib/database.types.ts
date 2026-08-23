@@ -23,6 +23,10 @@ export type TipoPessoa = "fisica" | "juridica";
 
 export type InteractionTipo = "nota" | "ligacao" | "whatsapp" | "email" | "visita";
 
+export type AppRole = "admin" | "vendedor";
+
+export type LeadTemperatura = "frio" | "morno" | "quente";
+
 export type Lead = {
   id: string;
   owner_id: string;
@@ -36,8 +40,65 @@ export type Lead = {
   consumo_kwh: number | null;
   valor_estimado: number | null;
   observacoes: string | null;
+  whatsapp: string | null;
+  cpf_cnpj: string | null;
+  endereco: string | null;
+  cep: string | null;
+  campanha: string | null;
+  anuncio: string | null;
+  vendedor_id: string | null;
+  temperatura: LeadTemperatura | null;
+  probabilidade: number | null;
+  proximo_contato: string | null;
   created_at: string;
   updated_at: string;
+};
+
+export type Profile = {
+  id: string;
+  full_name: string;
+  phone: string | null;
+  avatar_url: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type UserRole = {
+  id: string;
+  user_id: string;
+  role: AppRole;
+  created_at: string;
+};
+
+export type Permission = {
+  id: string;
+  user_id: string;
+  module: string;
+  can_view: boolean;
+  can_create: boolean;
+  can_edit: boolean;
+  can_delete: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AuditLog = {
+  id: string;
+  user_id: string | null;
+  module: string;
+  action: string;
+  record_id: string | null;
+  description: string | null;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+};
+
+export type Organization = {
+  id: string;
+  name: string;
+  legal_name: string | null;
+  cnpj: string | null;
+  created_at: string;
 };
 
 export type Client = {
@@ -190,6 +251,36 @@ export type Database = {
         Row: Interaction;
         Insert: Partial<Interaction>;
         Update: Partial<Interaction>;
+        Relationships: [];
+      };
+      profiles: {
+        Row: Profile;
+        Insert: Partial<Profile>;
+        Update: Partial<Profile>;
+        Relationships: [];
+      };
+      user_roles: {
+        Row: UserRole;
+        Insert: Partial<UserRole>;
+        Update: Partial<UserRole>;
+        Relationships: [];
+      };
+      permissions: {
+        Row: Permission;
+        Insert: Partial<Permission>;
+        Update: Partial<Permission>;
+        Relationships: [];
+      };
+      audit_logs: {
+        Row: AuditLog;
+        Insert: Partial<AuditLog>;
+        Update: Partial<AuditLog>;
+        Relationships: [];
+      };
+      organizations: {
+        Row: Organization;
+        Insert: Partial<Organization>;
+        Update: Partial<Organization>;
         Relationships: [];
       };
     };
