@@ -12,7 +12,13 @@ import { FieldGroup, Input, Select, Textarea } from "@/components/ui/Field";
 import { COMPANY } from "@/lib/company";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
-export function PropostaEditor({ proposal }: { proposal: Proposal }) {
+export function PropostaEditor({
+  proposal,
+  existingProjectId,
+}: {
+  proposal: Proposal;
+  existingProjectId: string | null;
+}) {
   const router = useRouter();
   const supabase = createClient();
 
@@ -24,6 +30,8 @@ export function PropostaEditor({ proposal }: { proposal: Proposal }) {
   const [observacoes, setObservacoes] = useState(proposal.observacoes ?? "");
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [converting, setConverting] = useState(false);
+  const [convertError, setConvertError] = useState<string | null>(null);
 
   const publicUrl =
     typeof window !== "undefined"
@@ -59,6 +67,62 @@ export function PropostaEditor({ proposal }: { proposal: Proposal }) {
       setTimeout(() => setCopied(false), 2000);
     } catch {
       // clipboard indisponível — o link já está visível na tela
+    }
+  }
+
+  async function handleConverterEmProjeto() {
+    setConverting(true);
+    setConvertError(null);
+    try {
+      let clientId = proposal.client_id;
+
+      if (!clientId) {
+        const { data: newClient, error: clientError } = await supabase
+          .from("clients")
+          .insert({
+            tipo_pessoa: "fisica",
+            nome: proposal.cliente_nome,
+            documento: proposal.cliente_documento,
+            email: proposal.cliente_email,
+            telefone: proposal.cliente_telefone,
+            endereco: proposal.cliente_endereco,
+            cidade: proposal.cliente_cidade,
+            estado: proposal.cliente_estado,
+            lead_id: proposal.lead_id,
+          })
+          .select("id")
+          .single();
+
+        if (clientError || !newClient) {
+          setConvertError(clientError?.message || "Não foi possível criar o cliente.");
+          setConverting(false);
+          return;
+        }
+        clientId = newClient.id;
+      }
+
+      const { data: newProject, error: projectError } = await supabase
+        .from("projects")
+        .insert({
+          client_id: clientId,
+          quote_id: proposal.quote_id,
+          proposal_id: proposal.id,
+          nome: `Projeto - ${proposal.cliente_nome}`,
+          potencia_kwp: proposal.potencia_kwp,
+        })
+        .select("id")
+        .single();
+
+      if (projectError || !newProject) {
+        setConvertError(projectError?.message || "Não foi possível criar o projeto.");
+        setConverting(false);
+        return;
+      }
+
+      router.push(`/projetos/${newProject.id}`);
+    } catch (err) {
+      setConvertError(err instanceof Error ? err.message : "Erro inesperado ao converter em projeto.");
+      setConverting(false);
     }
   }
 
@@ -199,15 +263,28 @@ export function PropostaEditor({ proposal }: { proposal: Proposal }) {
 
       {status === "aprovado" && (
         <Card className="print:hidden">
-          <CardBody className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-semibold text-foreground">Proposta aprovada pelo cliente</p>
-              <p className="text-sm text-muted">
-                O módulo de Projetos (Fase 6 do roadmap) ainda não existe — quando estiver pronto, esta
-                proposta poderá virar um projeto automaticamente.
-              </p>
+          <CardBody className="space-y-3">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold text-foreground">Proposta aprovada pelo cliente</p>
+                <p className="text-sm text-muted">
+                  {existingProjectId
+                    ? "Esta proposta já foi convertida em um projeto."
+                    : "Converta esta proposta em um projeto para acompanhar homologação e instalação."}
+                </p>
+              </div>
+              <Badge tone={PROPOSAL_STATUS_TONE.aprovado}>Aprovada</Badge>
             </div>
-            <Badge tone={PROPOSAL_STATUS_TONE.aprovado}>Aprovada</Badge>
+            {convertError && <p className="text-sm text-red-600">{convertError}</p>}
+            {existingProjectId ? (
+              <Button size="sm" variant="outline" onClick={() => router.push(`/projetos/${existingProjectId}`)}>
+                Ver projeto →
+              </Button>
+            ) : (
+              <Button size="sm" onClick={handleConverterEmProjeto} disabled={converting}>
+                {converting ? "Convertendo..." : "Converter em projeto"}
+              </Button>
+            )}
           </CardBody>
         </Card>
       )}

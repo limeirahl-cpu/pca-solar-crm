@@ -14,12 +14,19 @@ export default async function PropostaDetailPage({
 
   if (!proposal) notFound();
 
+  const { data: existingProject } = await supabase
+    .from("projects")
+    .select("id")
+    .eq("proposal_id", proposal.id)
+    .limit(1)
+    .maybeSingle();
+
   return (
     <div className="space-y-6">
       <Link href="/propostas" className="text-sm font-medium text-primary hover:underline print:hidden">
         ← Voltar para propostas
       </Link>
-      <PropostaEditor proposal={proposal} />
+      <PropostaEditor proposal={proposal} existingProjectId={existingProject?.id ?? null} />
     </div>
   );
 }
