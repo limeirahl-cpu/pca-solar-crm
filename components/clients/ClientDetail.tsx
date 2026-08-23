@@ -128,6 +128,11 @@ export function ClientDetail({
                   + Usina
                 </Button>
               </Link>
+              <Link href={`/ordens-servico?novo=1&client_id=${client.id}`}>
+                <Button size="sm" variant="outline">
+                  + O.S.
+                </Button>
+              </Link>
               <Button size="sm" variant="outline" onClick={() => setEditing((v) => !v)}>
                 {editing ? "Fechar" : "Editar"}
               </Button>

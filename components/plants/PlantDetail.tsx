@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Plant, PlantLog, PlantStatus } from "@/lib/database.types";
@@ -83,6 +84,11 @@ export function PlantDetail({ plant, logs }: { plant: PlantWithClient; logs: Pla
           subtitle={plant.clients?.nome ?? undefined}
           action={
             <div className="flex items-center gap-2">
+              <Link href={`/ordens-servico?novo=1&client_id=${plant.client_id}`}>
+                <Button size="sm" variant="outline">
+                  + O.S.
+                </Button>
+              </Link>
               <Select value={status} onChange={(e) => handleStatusChange(e.target.value as PlantStatus)}>
                 {STATUS_OPTIONS.map((s) => (
                   <option key={s.value} value={s.value}>
