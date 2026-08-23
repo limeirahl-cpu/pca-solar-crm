@@ -53,6 +53,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: "/servicos/monitoramento", label: "Monitoramento", icon: "📡", ready: false },
       { href: "/garantias", label: "Garantias", icon: "🛡️", ready: true },
       { href: "/ampliacoes", label: "Ampliações", icon: "➕", ready: true },
+      { href: "/pos-venda", label: "Pós-venda", icon: "🤝", ready: true },
     ],
   },
   {
@@ -98,9 +99,9 @@ export const NAV_GROUPS: NavGroup[] = [
     label: "Monitoramento",
     items: [
       { href: "/usinas", label: "Usinas", icon: "🔆", ready: true },
-      { href: "/usinas/geracao", label: "Geração", icon: "⚡", ready: false },
-      { href: "/usinas/alertas", label: "Alertas", icon: "🚨", ready: false },
-      { href: "/usinas/performance", label: "Performance", icon: "📶", ready: false },
+      { href: "/usinas/geracao", label: "Geração", icon: "⚡", ready: true },
+      { href: "/usinas/alertas", label: "Alertas", icon: "🚨", ready: true },
+      { href: "/usinas/performance", label: "Performance", icon: "📶", ready: true },
     ],
   },
   {

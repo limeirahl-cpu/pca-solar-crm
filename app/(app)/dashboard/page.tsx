@@ -9,6 +9,7 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 import { FUNIL_STAGE_LABEL, FUNIL_STAGE_TONE } from "@/lib/funil";
 import { isEstoqueBaixo } from "@/lib/estoque";
 import { isVencido } from "@/lib/financeiro";
+import { isCheckinAtrasado } from "@/lib/monitoramento";
 import type { Lead, Task } from "@/lib/database.types";
 
 const PLANT_STATUS_LABEL: Record<string, string> = {
@@ -18,7 +19,6 @@ const PLANT_STATUS_LABEL: Record<string, string> = {
 };
 
 const PROXIMOS_MODULOS = [
-  { label: "Pós-venda & monitoramento avançado", phase: "Fase 8" },
   { label: "Marketing & IA", phase: "Fase 9" },
   { label: "Integrações oficiais", phase: "Fase 10" },
 ];
@@ -48,6 +48,8 @@ export default async function DashboardPage() {
     { data: tarefasProximas },
     { data: produtos },
     { data: lancamentos },
+    { count: alertasAbertos },
+    { data: checkins },
   ] = await Promise.all([
     supabase.from("leads").select("id", { count: "exact", head: true }).gte("created_at", hojeInicioIso),
     supabase.from("leads").select("id", { count: "exact", head: true }).gte("created_at", mesInicioIso),
@@ -82,6 +84,8 @@ export default async function DashboardPage() {
       .limit(5),
     supabase.from("products").select("id, estoque_atual, estoque_minimo, valor_unitario"),
     supabase.from("financial_entries").select("id, tipo, valor, status, data_vencimento"),
+    supabase.from("plant_alerts").select("id", { count: "exact", head: true }).eq("status", "aberto"),
+    supabase.from("post_sale_checkins").select("id, data_prevista, status").eq("status", "pendente"),
   ]);
 
   const valorEmAberto = (orcamentosPendentes ?? []).reduce(
@@ -116,6 +120,11 @@ export default async function DashboardPage() {
     .filter((l) => l.tipo === "despesa" && l.status === "pendente")
     .reduce((sum, l) => sum + l.valor, 0);
   const lancamentosVencidos = lancamentosList.filter((l) => isVencido(l.data_vencimento, l.status)).length;
+
+  const checkinsList = checkins ?? [];
+  const checkinsAtrasados = checkinsList.filter((c) =>
+    isCheckinAtrasado(c.data_prevista, c.status)
+  ).length;
 
   return (
     <div className="space-y-8">
@@ -182,6 +191,23 @@ export default async function DashboardPage() {
             label="Lançamentos vencidos"
             value={String(lancamentosVencidos)}
             tone={lancamentosVencidos > 0 ? "primary" : "default"}
+          />
+        </div>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">Pós-venda &amp; Monitoramento</h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            label="Alertas abertos"
+            value={String(alertasAbertos ?? 0)}
+            tone={(alertasAbertos ?? 0) > 0 ? "primary" : "default"}
+          />
+          <StatCard label="Contatos de pós-venda pendentes" value={String(checkinsList.length)} />
+          <StatCard
+            label="Contatos atrasados"
+            value={String(checkinsAtrasados)}
+            tone={checkinsAtrasados > 0 ? "primary" : "default"}
           />
         </div>
       </section>

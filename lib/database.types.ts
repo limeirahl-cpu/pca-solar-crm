@@ -409,6 +409,66 @@ export type FinancialEntry = {
   updated_at: string;
 };
 
+export type PlantAlertTipo = "geracao_baixa" | "sem_dados" | "offline" | "manual";
+export type PlantAlertSeveridade = "baixa" | "media" | "alta";
+export type PlantAlertStatus = "aberto" | "resolvido";
+
+export type PlantAlert = {
+  id: string;
+  owner_id: string;
+  plant_id: string;
+  tipo: PlantAlertTipo;
+  severidade: PlantAlertSeveridade;
+  status: PlantAlertStatus;
+  titulo: string;
+  descricao: string | null;
+  valor_esperado: number | null;
+  valor_registrado: number | null;
+  resolvido_em: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type MonitoringProvider =
+  | "manual"
+  | "growatt"
+  | "fronius"
+  | "deye"
+  | "solaredge"
+  | "huawei"
+  | "outro";
+export type MonitoringConfigStatus = "manual" | "nao_configurado" | "conectado" | "erro";
+
+export type PlantMonitoringConfig = {
+  id: string;
+  owner_id: string;
+  plant_id: string;
+  provider: MonitoringProvider;
+  status: MonitoringConfigStatus;
+  identificador_externo: string | null;
+  observacoes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CheckinEtapa = "d1" | "d7" | "d30" | "d90" | "d180" | "d365";
+export type CheckinStatus = "pendente" | "realizado" | "nao_respondeu" | "nao_aplicavel";
+
+export type PostSaleCheckin = {
+  id: string;
+  owner_id: string;
+  project_id: string;
+  client_id: string | null;
+  etapa: CheckinEtapa;
+  data_prevista: string;
+  status: CheckinStatus;
+  descricao: string;
+  observacoes: string | null;
+  realizado_em: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type Client = {
   id: string;
   owner_id: string;
@@ -661,6 +721,24 @@ export type Database = {
         Row: FinancialEntry;
         Insert: Partial<FinancialEntry>;
         Update: Partial<FinancialEntry>;
+        Relationships: [];
+      };
+      plant_alerts: {
+        Row: PlantAlert;
+        Insert: Partial<PlantAlert>;
+        Update: Partial<PlantAlert>;
+        Relationships: [];
+      };
+      plant_monitoring_configs: {
+        Row: PlantMonitoringConfig;
+        Insert: Partial<PlantMonitoringConfig>;
+        Update: Partial<PlantMonitoringConfig>;
+        Relationships: [];
+      };
+      post_sale_checkins: {
+        Row: PostSaleCheckin;
+        Insert: Partial<PostSaleCheckin>;
+        Update: Partial<PostSaleCheckin>;
         Relationships: [];
       };
     };

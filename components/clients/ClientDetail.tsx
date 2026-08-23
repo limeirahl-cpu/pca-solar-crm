@@ -133,6 +133,11 @@ export function ClientDetail({
                   + O.S.
                 </Button>
               </Link>
+              <Link href={`/pos-venda?client_id=${client.id}`}>
+                <Button size="sm" variant="outline">
+                  Pós-venda
+                </Button>
+              </Link>
               <Button size="sm" variant="outline" onClick={() => setEditing((v) => !v)}>
                 {editing ? "Fechar" : "Editar"}
               </Button>
