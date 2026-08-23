@@ -372,6 +372,43 @@ export type StockReservation = {
   updated_at: string;
 };
 
+export type FinancialCategoriaTipo = "receita" | "despesa";
+
+export type FinancialCategory = {
+  id: string;
+  owner_id: string;
+  nome: string;
+  tipo: FinancialCategoriaTipo;
+  created_at: string;
+  updated_at: string;
+};
+
+export type FinancialEntryStatus = "pendente" | "pago" | "cancelado";
+
+export type FinancialEntry = {
+  id: string;
+  owner_id: string;
+  numero: number;
+  tipo: FinancialCategoriaTipo;
+  categoria_id: string | null;
+  descricao: string;
+  valor: number;
+  client_id: string | null;
+  supplier_id: string | null;
+  project_id: string | null;
+  proposal_id: string | null;
+  purchase_id: string | null;
+  ordem_servico_id: string | null;
+  vendedor_id: string | null;
+  status: FinancialEntryStatus;
+  data_vencimento: string;
+  data_pagamento: string | null;
+  forma_pagamento: string | null;
+  observacoes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type Client = {
   id: string;
   owner_id: string;
@@ -612,6 +649,18 @@ export type Database = {
         Row: StockReservation;
         Insert: Partial<StockReservation>;
         Update: Partial<StockReservation>;
+        Relationships: [];
+      };
+      financial_categories: {
+        Row: FinancialCategory;
+        Insert: Partial<FinancialCategory>;
+        Update: Partial<FinancialCategory>;
+        Relationships: [];
+      };
+      financial_entries: {
+        Row: FinancialEntry;
+        Insert: Partial<FinancialEntry>;
+        Update: Partial<FinancialEntry>;
         Relationships: [];
       };
     };

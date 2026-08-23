@@ -99,6 +99,12 @@ export function ProjectDetail({
               <Link href={`/estoque/reservas?novo=1&project_id=${project.id}`}>
                 <Button size="sm" variant="outline">Reservar estoque</Button>
               </Link>
+              <Link href={`/financeiro/receber?novo=1&project_id=${project.id}${client ? `&client_id=${client.id}` : ""}`}>
+                <Button size="sm" variant="outline">+ Conta a receber</Button>
+              </Link>
+              <Link href={`/financeiro/comissoes?novo=1&project_id=${project.id}`}>
+                <Button size="sm" variant="outline">+ Comissão</Button>
+              </Link>
               <Button size="sm" variant="outline" onClick={() => setEditing((v) => !v)}>
                 {editing ? "Fechar" : "Editar"}
               </Button>

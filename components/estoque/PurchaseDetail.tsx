@@ -122,6 +122,17 @@ export function PurchaseDetail({
       return;
     }
 
+    // Gera automaticamente a conta a pagar correspondente, com o valor já calculado dos itens.
+    await supabase.from("financial_entries").insert({
+      tipo: "despesa",
+      descricao: `Compra #${purchase.numero}`,
+      valor: valorTotal,
+      supplier_id: supplierId || null,
+      purchase_id: purchase.id,
+      data_vencimento: dataPrevista || new Date().toISOString().slice(0, 10),
+      observacoes: "Gerada automaticamente ao receber o pedido de compra.",
+    });
+
     await supabase
       .from("purchases")
       .update({ status: "recebido", data_recebimento: new Date().toISOString().slice(0, 10) })
@@ -263,7 +274,7 @@ export function PurchaseDetail({
           </div>
           {status === "recebido" && (
             <p className="text-sm text-green-700">
-              ✓ Compra recebida em {formatDate(purchase.data_recebimento)} — estoque atualizado automaticamente.
+              ✓ Compra recebida em {formatDate(purchase.data_recebimento)} — estoque e conta a pagar atualizados automaticamente.
             </p>
           )}
         </CardBody>

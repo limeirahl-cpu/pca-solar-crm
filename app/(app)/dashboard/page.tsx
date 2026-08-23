@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { FUNIL_STAGE_LABEL, FUNIL_STAGE_TONE } from "@/lib/funil";
 import { isEstoqueBaixo } from "@/lib/estoque";
+import { isVencido } from "@/lib/financeiro";
 import type { Lead, Task } from "@/lib/database.types";
 
 const PLANT_STATUS_LABEL: Record<string, string> = {
@@ -17,7 +18,6 @@ const PLANT_STATUS_LABEL: Record<string, string> = {
 };
 
 const PROXIMOS_MODULOS = [
-  { label: "Financeiro", phase: "Fase 7" },
   { label: "Pós-venda & monitoramento avançado", phase: "Fase 8" },
   { label: "Marketing & IA", phase: "Fase 9" },
   { label: "Integrações oficiais", phase: "Fase 10" },
@@ -47,6 +47,7 @@ export default async function DashboardPage() {
     { data: leadsRecentes },
     { data: tarefasProximas },
     { data: produtos },
+    { data: lancamentos },
   ] = await Promise.all([
     supabase.from("leads").select("id", { count: "exact", head: true }).gte("created_at", hojeInicioIso),
     supabase.from("leads").select("id", { count: "exact", head: true }).gte("created_at", mesInicioIso),
@@ -80,6 +81,7 @@ export default async function DashboardPage() {
       .order("data_vencimento", { ascending: true })
       .limit(5),
     supabase.from("products").select("id, estoque_atual, estoque_minimo, valor_unitario"),
+    supabase.from("financial_entries").select("id, tipo, valor, status, data_vencimento"),
   ]);
 
   const valorEmAberto = (orcamentosPendentes ?? []).reduce(
@@ -105,6 +107,15 @@ export default async function DashboardPage() {
     (sum, p) => sum + p.estoque_atual * (p.valor_unitario ?? 0),
     0
   );
+
+  const lancamentosList = lancamentos ?? [];
+  const aReceberPendente = lancamentosList
+    .filter((l) => l.tipo === "receita" && l.status === "pendente")
+    .reduce((sum, l) => sum + l.valor, 0);
+  const aPagarPendente = lancamentosList
+    .filter((l) => l.tipo === "despesa" && l.status === "pendente")
+    .reduce((sum, l) => sum + l.valor, 0);
+  const lancamentosVencidos = lancamentosList.filter((l) => isVencido(l.data_vencimento, l.status)).length;
 
   return (
     <div className="space-y-8">
@@ -159,6 +170,19 @@ export default async function DashboardPage() {
             tone={produtosEstoqueBaixo > 0 ? "primary" : "default"}
           />
           <StatCard label="Valor em estoque" value={formatCurrency(valorEmEstoque)} tone="accent" />
+        </div>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">Financeiro</h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard label="A receber (pendente)" value={formatCurrency(aReceberPendente)} tone="primary" />
+          <StatCard label="A pagar (pendente)" value={formatCurrency(aPagarPendente)} />
+          <StatCard
+            label="Lançamentos vencidos"
+            value={String(lancamentosVencidos)}
+            tone={lancamentosVencidos > 0 ? "primary" : "default"}
+          />
         </div>
       </section>
 
