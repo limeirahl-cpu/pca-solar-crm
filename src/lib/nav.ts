@@ -24,7 +24,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/leads", label: "Leads", icon: "🧲", ready: true },
       { href: "/clientes", label: "Clientes", icon: "👥", ready: true },
-      { href: "/funil", label: "Funil de Vendas", icon: "🧭", ready: false },
+      { href: "/funil", label: "Funil de Vendas", icon: "🧭", ready: true },
       { href: "/orcamentos", label: "Orçamentos", icon: "🧾", ready: true },
       { href: "/propostas", label: "Propostas", icon: "📄", ready: false },
       { href: "/contratos", label: "Contratos", icon: "✍️", ready: false },

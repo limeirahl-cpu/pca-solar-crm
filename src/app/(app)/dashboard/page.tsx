@@ -6,16 +6,8 @@ import { Card, CardHeader, CardBody } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { FUNIL_STAGE_LABEL, FUNIL_STAGE_TONE } from "@/lib/funil";
 import type { Lead, Task } from "@/lib/database.types";
-
-const LEAD_STATUS_LABEL: Record<string, string> = {
-  novo: "Novo",
-  contatado: "Contatado",
-  orcamento_enviado: "Orçamento enviado",
-  negociacao: "Negociação",
-  fechado: "Fechado",
-  perdido: "Perdido",
-};
 
 const PLANT_STATUS_LABEL: Record<string, string> = {
   ativa: "🟢 Online",
@@ -61,7 +53,7 @@ export default async function DashboardPage() {
     supabase
       .from("leads")
       .select("id", { count: "exact", head: true })
-      .eq("status", "fechado")
+      .eq("status", "pos_venda")
       .gte("updated_at", mesInicioIso),
     supabase.from("leads").select("id", { count: "exact", head: true }),
     supabase.from("quotes").select("id, valor_total, status").in("status", ["rascunho", "enviado"]),
@@ -164,7 +156,9 @@ export default async function DashboardPage() {
                       <p className="text-sm font-medium text-foreground">{lead.nome}</p>
                       <p className="text-xs text-muted">{formatDate(lead.created_at)}</p>
                     </div>
-                    <Badge tone="amber">{LEAD_STATUS_LABEL[lead.status] ?? lead.status}</Badge>
+                    <Badge tone={FUNIL_STAGE_TONE[lead.status]}>
+                      {FUNIL_STAGE_LABEL[lead.status] ?? lead.status}
+                    </Badge>
                   </li>
                 ))}
               </ul>

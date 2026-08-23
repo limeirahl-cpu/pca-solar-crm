@@ -1,9 +1,17 @@
 export type LeadStatus =
   | "novo"
-  | "contatado"
-  | "orcamento_enviado"
+  | "primeiro_contato"
+  | "qualificacao"
+  | "visita_agendada"
+  | "visita_realizada"
+  | "dimensionamento"
+  | "orcamento"
   | "negociacao"
-  | "fechado"
+  | "aprovacao"
+  | "contrato"
+  | "pagamento"
+  | "instalacao"
+  | "pos_venda"
   | "perdido";
 
 export type LeadOrigem =

@@ -1,9 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import type { Lead, LeadOrigem, LeadStatus } from "@/lib/database.types";
+import type { Lead, LeadOrigem, LeadStatus, LeadTemperatura } from "@/lib/database.types";
+import { FUNIL_STAGES, TEMPERATURA_OPTIONS } from "@/lib/funil";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -11,15 +13,6 @@ import { Modal } from "@/components/ui/Modal";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FieldGroup, Input, Select, Textarea } from "@/components/ui/Field";
 import { formatCurrency, formatDate } from "@/lib/utils";
-
-const STATUS_OPTIONS: { value: LeadStatus; label: string; tone: "neutral" | "amber" | "green" | "red" | "blue" | "teal" }[] = [
-  { value: "novo", label: "Novo", tone: "blue" },
-  { value: "contatado", label: "Contatado", tone: "amber" },
-  { value: "orcamento_enviado", label: "Orçamento enviado", tone: "teal" },
-  { value: "negociacao", label: "Negociação", tone: "amber" },
-  { value: "fechado", label: "Fechado", tone: "green" },
-  { value: "perdido", label: "Perdido", tone: "red" },
-];
 
 const ORIGEM_OPTIONS: { value: LeadOrigem; label: string }[] = [
   { value: "site", label: "Site" },
@@ -34,13 +27,22 @@ const ORIGEM_OPTIONS: { value: LeadOrigem; label: string }[] = [
 const emptyForm = {
   nome: "",
   telefone: "",
+  whatsapp: "",
   email: "",
+  cpf_cnpj: "",
   origem: "site" as LeadOrigem,
   status: "novo" as LeadStatus,
+  temperatura: "" as LeadTemperatura | "",
+  endereco: "",
   cidade: "",
   estado: "",
+  cep: "",
+  campanha: "",
+  anuncio: "",
   consumo_kwh: "",
   valor_estimado: "",
+  probabilidade: "",
+  proximo_contato: "",
   observacoes: "",
 };
 
@@ -81,13 +83,22 @@ export function LeadsManager({ initialLeads }: { initialLeads: Lead[] }) {
     setForm({
       nome: lead.nome,
       telefone: lead.telefone ?? "",
+      whatsapp: lead.whatsapp ?? "",
       email: lead.email ?? "",
+      cpf_cnpj: lead.cpf_cnpj ?? "",
       origem: lead.origem,
       status: lead.status,
+      temperatura: lead.temperatura ?? "",
+      endereco: lead.endereco ?? "",
       cidade: lead.cidade ?? "",
       estado: lead.estado ?? "",
+      cep: lead.cep ?? "",
+      campanha: lead.campanha ?? "",
+      anuncio: lead.anuncio ?? "",
       consumo_kwh: lead.consumo_kwh?.toString() ?? "",
       valor_estimado: lead.valor_estimado?.toString() ?? "",
+      probabilidade: lead.probabilidade?.toString() ?? "",
+      proximo_contato: lead.proximo_contato ? lead.proximo_contato.slice(0, 10) : "",
       observacoes: lead.observacoes ?? "",
     });
     setError(null);
@@ -102,13 +113,22 @@ export function LeadsManager({ initialLeads }: { initialLeads: Lead[] }) {
     const payload = {
       nome: form.nome,
       telefone: form.telefone || null,
+      whatsapp: form.whatsapp || null,
       email: form.email || null,
+      cpf_cnpj: form.cpf_cnpj || null,
       origem: form.origem,
       status: form.status,
+      temperatura: form.temperatura || null,
+      endereco: form.endereco || null,
       cidade: form.cidade || null,
       estado: form.estado || null,
+      cep: form.cep || null,
+      campanha: form.campanha || null,
+      anuncio: form.anuncio || null,
       consumo_kwh: form.consumo_kwh ? Number(form.consumo_kwh) : null,
       valor_estimado: form.valor_estimado ? Number(form.valor_estimado) : null,
+      probabilidade: form.probabilidade ? Number(form.probabilidade) : null,
+      proximo_contato: form.proximo_contato ? new Date(form.proximo_contato).toISOString() : null,
       observacoes: form.observacoes || null,
     };
 
@@ -162,13 +182,16 @@ export function LeadsManager({ initialLeads }: { initialLeads: Lead[] }) {
         telefone: lead.telefone,
         cidade: lead.cidade,
         estado: lead.estado,
+        endereco: lead.endereco,
+        cep: lead.cep,
+        documento: lead.cpf_cnpj,
         tipo_pessoa: "fisica",
       })
       .select()
       .single();
 
     if (!error && data) {
-      await supabase.from("leads").update({ status: "fechado" }).eq("id", lead.id);
+      await supabase.from("leads").update({ status: "pos_venda" }).eq("id", lead.id);
       router.push(`/clientes/${data.id}`);
     }
   }
@@ -186,14 +209,19 @@ export function LeadsManager({ initialLeads }: { initialLeads: Lead[] }) {
             />
             <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="sm:max-w-[200px]">
               <option value="todos">Todos os status</option>
-              {STATUS_OPTIONS.map((s) => (
+              {FUNIL_STAGES.map((s) => (
                 <option key={s.value} value={s.value}>
                   {s.label}
                 </option>
               ))}
             </Select>
           </div>
-          <Button onClick={openNew}>+ Novo lead</Button>
+          <div className="flex gap-2">
+            <Link href="/funil">
+              <Button variant="outline">Ver funil</Button>
+            </Link>
+            <Button onClick={openNew}>+ Novo lead</Button>
+          </div>
         </div>
       </Card>
 
@@ -221,10 +249,14 @@ export function LeadsManager({ initialLeads }: { initialLeads: Lead[] }) {
               </thead>
               <tbody className="divide-y divide-border">
                 {filtered.map((lead) => {
-                  const statusMeta = STATUS_OPTIONS.find((s) => s.value === lead.status);
+                  const statusMeta = FUNIL_STAGES.find((s) => s.value === lead.status);
                   return (
                     <tr key={lead.id} className="hover:bg-black/[0.02]">
-                      <td className="px-5 py-3 font-medium text-foreground">{lead.nome}</td>
+                      <td className="px-5 py-3 font-medium text-foreground">
+                        <Link href={`/leads/${lead.id}`} className="hover:underline">
+                          {lead.nome}
+                        </Link>
+                      </td>
                       <td className="px-5 py-3 text-muted">
                         <div>{lead.telefone || "-"}</div>
                         <div className="text-xs">{lead.email || ""}</div>
@@ -240,7 +272,7 @@ export function LeadsManager({ initialLeads }: { initialLeads: Lead[] }) {
                           onChange={(e) => handleStatusChange(lead, e.target.value as LeadStatus)}
                           className="rounded-md border-0 bg-transparent text-xs font-medium focus:outline-none focus:ring-1 focus:ring-primary/40"
                         >
-                          {STATUS_OPTIONS.map((s) => (
+                          {FUNIL_STAGES.map((s) => (
                             <option key={s.value} value={s.value}>
                               {s.label}
                             </option>
@@ -276,11 +308,7 @@ export function LeadsManager({ initialLeads }: { initialLeads: Lead[] }) {
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? "Editar lead" : "Novo lead"}>
         <form onSubmit={handleSubmit} className="space-y-4">
           <FieldGroup label="Nome" required>
-            <Input
-              required
-              value={form.nome}
-              onChange={(e) => setForm({ ...form, nome: e.target.value })}
-            />
+            <Input required value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} />
           </FieldGroup>
 
           <div className="grid grid-cols-2 gap-3">
@@ -291,16 +319,25 @@ export function LeadsManager({ initialLeads }: { initialLeads: Lead[] }) {
                 placeholder="(00) 00000-0000"
               />
             </FieldGroup>
-            <FieldGroup label="Email">
+            <FieldGroup label="WhatsApp">
               <Input
-                type="email"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                value={form.whatsapp}
+                onChange={(e) => setForm({ ...form, whatsapp: e.target.value })}
+                placeholder="(00) 00000-0000"
               />
             </FieldGroup>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
+            <FieldGroup label="Email">
+              <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+            </FieldGroup>
+            <FieldGroup label="CPF/CNPJ">
+              <Input value={form.cpf_cnpj} onChange={(e) => setForm({ ...form, cpf_cnpj: e.target.value })} />
+            </FieldGroup>
+          </div>
+
+          <div className="grid grid-cols-3 gap-3">
             <FieldGroup label="Origem">
               <Select value={form.origem} onChange={(e) => setForm({ ...form, origem: e.target.value as LeadOrigem })}>
                 {ORIGEM_OPTIONS.map((o) => (
@@ -310,11 +347,24 @@ export function LeadsManager({ initialLeads }: { initialLeads: Lead[] }) {
                 ))}
               </Select>
             </FieldGroup>
-            <FieldGroup label="Status">
+            <FieldGroup label="Etapa do funil">
               <Select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as LeadStatus })}>
-                {STATUS_OPTIONS.map((s) => (
+                {FUNIL_STAGES.map((s) => (
                   <option key={s.value} value={s.value}>
                     {s.label}
+                  </option>
+                ))}
+              </Select>
+            </FieldGroup>
+            <FieldGroup label="Temperatura">
+              <Select
+                value={form.temperatura}
+                onChange={(e) => setForm({ ...form, temperatura: e.target.value as LeadTemperatura })}
+              >
+                <option value="">Não definida</option>
+                {TEMPERATURA_OPTIONS.map((t) => (
+                  <option key={t.value} value={t.value}>
+                    {t.label}
                   </option>
                 ))}
               </Select>
@@ -322,7 +372,20 @@ export function LeadsManager({ initialLeads }: { initialLeads: Lead[] }) {
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <FieldGroup label="Cidade">
+            <FieldGroup label="Campanha">
+              <Input value={form.campanha} onChange={(e) => setForm({ ...form, campanha: e.target.value })} />
+            </FieldGroup>
+            <FieldGroup label="Anúncio">
+              <Input value={form.anuncio} onChange={(e) => setForm({ ...form, anuncio: e.target.value })} />
+            </FieldGroup>
+          </div>
+
+          <FieldGroup label="Endereço">
+            <Input value={form.endereco} onChange={(e) => setForm({ ...form, endereco: e.target.value })} />
+          </FieldGroup>
+
+          <div className="grid grid-cols-3 gap-3">
+            <FieldGroup label="Cidade" className="col-span-2">
               <Input value={form.cidade} onChange={(e) => setForm({ ...form, cidade: e.target.value })} />
             </FieldGroup>
             <FieldGroup label="UF">
@@ -333,6 +396,10 @@ export function LeadsManager({ initialLeads }: { initialLeads: Lead[] }) {
               />
             </FieldGroup>
           </div>
+
+          <FieldGroup label="CEP">
+            <Input value={form.cep} onChange={(e) => setForm({ ...form, cep: e.target.value })} />
+          </FieldGroup>
 
           <div className="grid grid-cols-2 gap-3">
             <FieldGroup label="Consumo médio (kWh/mês)">
@@ -353,11 +420,27 @@ export function LeadsManager({ initialLeads }: { initialLeads: Lead[] }) {
             </FieldGroup>
           </div>
 
+          <div className="grid grid-cols-2 gap-3">
+            <FieldGroup label="Probabilidade de fechar (%)">
+              <Input
+                type="number"
+                min={0}
+                max={100}
+                value={form.probabilidade}
+                onChange={(e) => setForm({ ...form, probabilidade: e.target.value })}
+              />
+            </FieldGroup>
+            <FieldGroup label="Próximo contato">
+              <Input
+                type="date"
+                value={form.proximo_contato}
+                onChange={(e) => setForm({ ...form, proximo_contato: e.target.value })}
+              />
+            </FieldGroup>
+          </div>
+
           <FieldGroup label="Observações">
-            <Textarea
-              value={form.observacoes}
-              onChange={(e) => setForm({ ...form, observacoes: e.target.value })}
-            />
+            <Textarea value={form.observacoes} onChange={(e) => setForm({ ...form, observacoes: e.target.value })} />
           </FieldGroup>
 
           {error && <p className="text-sm text-danger">{error}</p>}
