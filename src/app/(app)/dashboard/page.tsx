@@ -5,12 +5,13 @@ import { StatCard } from "@/components/ui/StatCard";
 import { Card, CardHeader, CardBody } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { DashboardBarChart, type BarChartPoint } from "@/components/dashboard/DashboardBarChart";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { FUNIL_STAGE_LABEL, FUNIL_STAGE_TONE } from "@/lib/funil";
+import { FUNIL_STAGES, FUNIL_STAGE_LABEL, FUNIL_STAGE_TONE } from "@/lib/funil";
 import { isEstoqueBaixo } from "@/lib/estoque";
 import { isVencido } from "@/lib/financeiro";
 import { isCheckinAtrasado } from "@/lib/monitoramento";
-import type { Lead, Task } from "@/lib/database.types";
+import type { Lead, Task, LeadStatus } from "@/lib/database.types";
 
 const PLANT_STATUS_LABEL: Record<string, string> = {
   ativa: "🟢 Online",
@@ -49,6 +50,7 @@ export default async function DashboardPage() {
     { data: checkins },
     { count: campanhasAtivas },
     { count: postsAguardandoAprovacao },
+    { data: leadsPorEtapaRaw },
   ] = await Promise.all([
     supabase.from("leads").select("id", { count: "exact", head: true }).gte("created_at", hojeInicioIso),
     supabase.from("leads").select("id", { count: "exact", head: true }).gte("created_at", mesInicioIso),
@@ -90,6 +92,7 @@ export default async function DashboardPage() {
       .from("marketing_posts")
       .select("id", { count: "exact", head: true })
       .eq("status", "aguardando_aprovacao"),
+    supabase.from("leads").select("status"),
   ]);
 
   const valorEmAberto = (orcamentosPendentes ?? []).reduce(
@@ -129,6 +132,41 @@ export default async function DashboardPage() {
   const checkinsAtrasados = checkinsList.filter((c) =>
     isCheckinAtrasado(c.data_prevista, c.status)
   ).length;
+
+  // Gráfico: quantidade de leads em cada etapa do funil comercial.
+  const leadsPorEtapaCount: Record<string, number> = {};
+  for (const { status } of leadsPorEtapaRaw ?? []) {
+    leadsPorEtapaCount[status] = (leadsPorEtapaCount[status] ?? 0) + 1;
+  }
+  const FUNIL_CHART_COLORS: Record<string, string> = {
+    novo: "#f9700e",
+    primeiro_contato: "#f9700e",
+    qualificacao: "#2e9e52",
+    visita_agendada: "#2e9e52",
+    visita_realizada: "#2e9e52",
+    dimensionamento: "#1e2f44",
+    orcamento: "#1e2f44",
+    negociacao: "#1e2f44",
+    aprovacao: "#2e9e52",
+    contrato: "#2e9e52",
+    pagamento: "#2e9e52",
+    instalacao: "#2e9e52",
+    pos_venda: "#2e9e52",
+    perdido: "#df2225",
+  };
+  const leadsPorEtapaChart: BarChartPoint[] = FUNIL_STAGES.filter(
+    (s) => s.value !== ("perdido" as LeadStatus)
+  ).map((stage) => ({
+    label: stage.label,
+    value: leadsPorEtapaCount[stage.value] ?? 0,
+    color: FUNIL_CHART_COLORS[stage.value],
+  }));
+
+  // Gráfico: comparativo financeiro (a receber vs. a pagar vs. vencidos).
+  const financeiroChart: BarChartPoint[] = [
+    { label: "A receber", value: aReceberPendente, color: "#2e9e52" },
+    { label: "A pagar", value: aPagarPendente, color: "#f9700e" },
+  ];
 
   return (
     <div className="space-y-8">
@@ -227,6 +265,21 @@ export default async function DashboardPage() {
           />
         </div>
       </section>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardHeader title="Leads por etapa do funil" subtitle="Quantidade de leads em cada etapa comercial" />
+          <CardBody>
+            <DashboardBarChart data={leadsPorEtapaChart} height={260} />
+          </CardBody>
+        </Card>
+        <Card>
+          <CardHeader title="Financeiro" subtitle="Pendente no momento" />
+          <CardBody>
+            <DashboardBarChart data={financeiroChart} valueFormatter={formatCurrency} height={260} />
+          </CardBody>
+        </Card>
+      </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card>
