@@ -67,6 +67,7 @@ export type Lead = {
   temperatura: LeadTemperatura | null;
   probabilidade: number | null;
   proximo_contato: string | null;
+  campaign_id: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -469,6 +470,67 @@ export type PostSaleCheckin = {
   updated_at: string;
 };
 
+export type MarketingCampaignCanal = "instagram" | "facebook" | "google" | "whatsapp" | "outro";
+export type MarketingCampaignStatus = "planejada" | "ativa" | "pausada" | "encerrada";
+
+export type MarketingCampaign = {
+  id: string;
+  owner_id: string;
+  nome: string;
+  objetivo: string | null;
+  canal: MarketingCampaignCanal;
+  status: MarketingCampaignStatus;
+  data_inicio: string | null;
+  data_fim: string | null;
+  orcamento: number | null;
+  observacoes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type MarketingPostCanal = "instagram" | "facebook" | "blog" | "outro";
+export type MarketingPostStatus =
+  | "ideia"
+  | "rascunho"
+  | "aguardando_aprovacao"
+  | "aprovado"
+  | "publicado"
+  | "cancelado";
+
+export type MarketingPost = {
+  id: string;
+  owner_id: string;
+  campaign_id: string | null;
+  canal: MarketingPostCanal;
+  titulo: string;
+  legenda: string | null;
+  imagem_url: string | null;
+  status: MarketingPostStatus;
+  gerado_por_ia: boolean;
+  data_planejada: string | null;
+  data_publicado: string | null;
+  aprovado_por: string | null;
+  aprovado_em: string | null;
+  observacoes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type IntegrationProvider = "whatsapp" | "instagram";
+export type IntegrationStatus = "nao_configurado" | "conectado" | "erro";
+
+export type IntegrationConfig = {
+  id: string;
+  owner_id: string;
+  provider: IntegrationProvider;
+  status: IntegrationStatus;
+  metadata: Record<string, string | number | null>;
+  ultimo_erro: string | null;
+  ultima_verificacao: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type Client = {
   id: string;
   owner_id: string;
@@ -739,6 +801,24 @@ export type Database = {
         Row: PostSaleCheckin;
         Insert: Partial<PostSaleCheckin>;
         Update: Partial<PostSaleCheckin>;
+        Relationships: [];
+      };
+      marketing_campaigns: {
+        Row: MarketingCampaign;
+        Insert: Partial<MarketingCampaign>;
+        Update: Partial<MarketingCampaign>;
+        Relationships: [];
+      };
+      marketing_posts: {
+        Row: MarketingPost;
+        Insert: Partial<MarketingPost>;
+        Update: Partial<MarketingPost>;
+        Relationships: [];
+      };
+      integration_configs: {
+        Row: IntegrationConfig;
+        Insert: Partial<IntegrationConfig>;
+        Update: Partial<IntegrationConfig>;
         Relationships: [];
       };
     };
