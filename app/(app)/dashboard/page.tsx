@@ -18,10 +18,7 @@ const PLANT_STATUS_LABEL: Record<string, string> = {
   inativa: "🔴 Offline",
 };
 
-const PROXIMOS_MODULOS = [
-  { label: "Marketing & IA", phase: "Fase 9" },
-  { label: "Integrações oficiais", phase: "Fase 10" },
-];
+const PROXIMOS_MODULOS = [{ label: "Integrações oficiais", phase: "Fase 10" }];
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -50,6 +47,8 @@ export default async function DashboardPage() {
     { data: lancamentos },
     { count: alertasAbertos },
     { data: checkins },
+    { count: campanhasAtivas },
+    { count: postsAguardandoAprovacao },
   ] = await Promise.all([
     supabase.from("leads").select("id", { count: "exact", head: true }).gte("created_at", hojeInicioIso),
     supabase.from("leads").select("id", { count: "exact", head: true }).gte("created_at", mesInicioIso),
@@ -86,6 +85,11 @@ export default async function DashboardPage() {
     supabase.from("financial_entries").select("id, tipo, valor, status, data_vencimento"),
     supabase.from("plant_alerts").select("id", { count: "exact", head: true }).eq("status", "aberto"),
     supabase.from("post_sale_checkins").select("id, data_prevista, status").eq("status", "pendente"),
+    supabase.from("marketing_campaigns").select("id", { count: "exact", head: true }).eq("status", "ativa"),
+    supabase
+      .from("marketing_posts")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "aguardando_aprovacao"),
   ]);
 
   const valorEmAberto = (orcamentosPendentes ?? []).reduce(
@@ -208,6 +212,18 @@ export default async function DashboardPage() {
             label="Contatos atrasados"
             value={String(checkinsAtrasados)}
             tone={checkinsAtrasados > 0 ? "primary" : "default"}
+          />
+        </div>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">Marketing</h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard label="Campanhas ativas" value={String(campanhasAtivas ?? 0)} tone="primary" />
+          <StatCard
+            label="Posts aguardando aprovação"
+            value={String(postsAguardandoAprovacao ?? 0)}
+            tone={(postsAguardandoAprovacao ?? 0) > 0 ? "primary" : "default"}
           />
         </div>
       </section>

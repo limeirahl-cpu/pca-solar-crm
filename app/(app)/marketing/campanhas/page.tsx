@@ -1,11 +1,13 @@
-import { ComingSoon } from "@/components/ui/ComingSoon";
+import { createClient } from "@/lib/supabase/server";
+import { CampaignsManager } from "@/components/marketing/CampaignsManager";
 
-export default function Page() {
-  return (
-    <ComingSoon
-      title="Campanhas"
-      description="Cadastro e acompanhamento de campanhas de marketing."
-      phase="Fase 19 — Marketing"
-    />
-  );
+export default async function CampanhasPage() {
+  const supabase = await createClient();
+
+  const { data: campaigns } = await supabase
+    .from("marketing_campaigns")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  return <CampaignsManager initialCampaigns={campaigns ?? []} />;
 }

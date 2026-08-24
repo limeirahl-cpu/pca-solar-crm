@@ -105,6 +105,9 @@ export function ProjectDetail({
               <Link href={`/financeiro/comissoes?novo=1&project_id=${project.id}`}>
                 <Button size="sm" variant="outline">+ Comissão</Button>
               </Link>
+              <Link href={`/pos-venda?project_id=${project.id}`}>
+                <Button size="sm" variant="outline">Pós-venda</Button>
+              </Link>
               <Button size="sm" variant="outline" onClick={() => setEditing((v) => !v)}>
                 {editing ? "Fechar" : "Editar"}
               </Button>
