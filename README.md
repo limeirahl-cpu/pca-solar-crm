@@ -84,3 +84,6 @@ git push -u origin main
 3. Deploy.
 
 Pronto — o site fica no ar com deploy automático a cada `git push`.
+
+---
+*Última verificação de deploy: forçando atualização de produção.*
