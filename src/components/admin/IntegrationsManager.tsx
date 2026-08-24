@@ -14,11 +14,12 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { formatDateTime } from "@/lib/utils";
 
-const PROVIDERS: IntegrationProvider[] = ["whatsapp", "instagram"];
+const PROVIDERS: IntegrationProvider[] = ["whatsapp", "instagram", "fortlev"];
 
 const TEST_ENDPOINT: Record<IntegrationProvider, string> = {
   whatsapp: "/api/integracoes/whatsapp/testar",
   instagram: "/api/integracoes/instagram/testar",
+  fortlev: "/api/integracoes/fortlev/testar",
 };
 
 export function IntegrationsManager({ initialConfigs }: { initialConfigs: IntegrationConfig[] }) {
@@ -31,6 +32,8 @@ export function IntegrationsManager({ initialConfigs }: { initialConfigs: Integr
     return map as Record<IntegrationProvider, IntegrationConfig | null>;
   });
   const [testing, setTesting] = useState<IntegrationProvider | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string | undefined>>({});
 
   async function testar(provider: IntegrationProvider) {
@@ -52,18 +55,37 @@ export function IntegrationsManager({ initialConfigs }: { initialConfigs: Integr
     setTesting(null);
   }
 
+  async function sincronizarFortlev() {
+    setSyncing(true);
+    setSyncResult(null);
+    setErrors((prev) => ({ ...prev, fortlev: undefined }));
+    try {
+      const res = await fetch("/api/integracoes/fortlev/sincronizar", { method: "POST" });
+      const data = await res.json();
+      if (data.error) {
+        setErrors((prev) => ({ ...prev, fortlev: data.error }));
+      } else {
+        setSyncResult(`${data.total} itens sincronizados.`);
+      }
+      router.refresh();
+    } catch {
+      setErrors((prev) => ({ ...prev, fortlev: "Falha de conexão ao sincronizar." }));
+    }
+    setSyncing(false);
+  }
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-xl font-semibold text-foreground">Integrações</h1>
         <p className="text-sm text-muted">
-          Conexões oficiais com APIs da Meta. Nenhuma credencial fica salva no banco — as chaves vivem
-          como variáveis de ambiente no servidor, e cada integração mostra honestamente se está
-          configurada ou não.
+          Conexões oficiais com APIs externas (Meta e fornecedores). Nenhuma credencial fica salva
+          no banco — as chaves vivem como variáveis de ambiente no servidor, e cada integração
+          mostra honestamente se está configurada ou não.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
         {PROVIDERS.map((provider) => {
           const config = configs[provider];
           const status = config?.status ?? "nao_configurado";
@@ -102,6 +124,9 @@ export function IntegrationsManager({ initialConfigs }: { initialConfigs: Integr
                 )}
 
                 {errors[provider] && <p className="text-xs text-danger">{errors[provider]}</p>}
+                {provider === "fortlev" && syncResult && (
+                  <p className="text-xs text-success">{syncResult}</p>
+                )}
 
                 <div className="flex items-center justify-between gap-2 pt-1">
                   {config?.ultima_verificacao ? (
@@ -111,9 +136,16 @@ export function IntegrationsManager({ initialConfigs }: { initialConfigs: Integr
                   ) : (
                     <span className="text-xs text-muted">Nunca testada</span>
                   )}
-                  <Button size="sm" variant="outline" onClick={() => testar(provider)} disabled={testing === provider}>
-                    {testing === provider ? "Testando..." : "Testar conexão"}
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => testar(provider)} disabled={testing === provider}>
+                      {testing === provider ? "Testando..." : "Testar conexão"}
+                    </Button>
+                    {provider === "fortlev" && status === "conectado" && (
+                      <Button size="sm" onClick={sincronizarFortlev} disabled={syncing}>
+                        {syncing ? "Sincronizando..." : "Sincronizar catálogo"}
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </CardBody>
             </Card>
@@ -128,6 +160,16 @@ export function IntegrationsManager({ initialConfigs }: { initialConfigs: Integr
           WhatsApp ou publicar posts no Instagram por aqui ainda não está implementado — isso depende de
           revisão de app (App Review) da Meta para os escopos de publicação, que só a PCA Solar pode
           solicitar. Assim que a conexão estiver confirmada, esse é o próximo passo natural.
+        </p>
+      </Card>
+
+      <Card className="p-4">
+        <p className="text-sm text-muted">
+          <span className="font-medium text-foreground">Sobre a Fortlev Solar: </span>
+          &quot;Sincronizar catálogo&quot; traz a lista de componentes (módulos, inversores, estruturas)
+          para o menu Estoque → Catálogo de Fornecedores. A Fortlev não vende item avulso com preço
+          fixo — o preço só existe cotado dentro de um kit completo, então essa cotação acontece em
+          tempo real na hora de montar um orçamento, não fica guardada no banco.
         </p>
       </Card>
     </div>

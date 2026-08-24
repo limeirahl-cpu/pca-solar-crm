@@ -12,6 +12,7 @@ Stack: **Next.js 16 (App Router) + TypeScript + Tailwind CSS v4 + Supabase (banc
 - **Usinas (monitoramento)**: cadastro das usinas instaladas, status (ativa/manutenção/inativa), histórico de geração de energia lançado manualmente + gráfico.
 - **Tarefas**: follow-ups vinculados a leads/clientes com data de vencimento.
 - **Dashboard**: visão geral com métricas e atalhos.
+- **Catálogo de Fornecedores**: integração oficial com a API de parceiros da Fortlev Solar — sincroniza o catálogo de componentes automaticamente e permite cotar kits fotovoltaicos completos em tempo real (ver seção "Integração com fornecedores" abaixo).
 
 O banco já está modelado com `owner_id` em todas as tabelas (via Row Level Security), pronto para no futuro virar multiusuário sem reescrever nada.
 
@@ -41,6 +42,32 @@ npm run dev
 ```
 
 Acesse http://localhost:3000 e faça login com o usuário criado no passo 1.3.
+
+## Integração com fornecedores (opcional)
+
+O CRM já vem com uma integração oficial pronta para a **Fortlev Solar** (fornecedor de
+módulos, inversores e estruturas). Ela usa a API real de parceiros da Fortlev
+(`fortlevsolar.app/api`) — não é simulação nem raspagem de site.
+
+1. Vá em **Admin → Project Settings → Environment Variables** na Vercel e adicione:
+   ```
+   FORTLEV_SOLAR_USERNAME=seu-usuario-do-portal-parceiro-fortlev
+   FORTLEV_SOLAR_PWD=sua-senha-do-portal-parceiro-fortlev
+   ```
+   (é o mesmo usuário/senha que você já usa para entrar no portal de parceiros da Fortlev.
+   Se ainda não tiver uma conta de parceiro, é preciso solicitar isso à Fortlev antes.)
+2. Redeploy o projeto para a variável entrar em vigor.
+3. No sistema, vá em **Admin → Integrações** → card "Fortlev Solar" → **Testar conexão**.
+   Se conectar, o botão **Sincronizar catálogo** aparece — clique nele para trazer o
+   catálogo de componentes para **Estoque → Catálogo de Fornecedores**.
+
+A Fortlev não vende item avulso com preço fixo — o preço só existe cotado dentro de um
+kit fotovoltaico completo (potência + cidade + voltagem). Por isso o catálogo sincronizado
+não tem preço; cotações de kit acontecem em tempo real via `/api/integracoes/fortlev/kits`.
+
+Outros fornecedores podem ser cadastrados manualmente em **Estoque → Fornecedores** e
+seus produtos importados por planilha — a integração automática por API, como a da
+Fortlev, é feita caso a caso conforme cada fornecedor disponibilizar algo parecido.
 
 ## 4. Publicar no GitHub
 

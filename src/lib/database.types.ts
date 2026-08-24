@@ -516,7 +516,7 @@ export type MarketingPost = {
   updated_at: string;
 };
 
-export type IntegrationProvider = "whatsapp" | "instagram";
+export type IntegrationProvider = "whatsapp" | "instagram" | "fortlev";
 export type IntegrationStatus = "nao_configurado" | "conectado" | "erro";
 
 export type IntegrationConfig = {
@@ -527,6 +527,22 @@ export type IntegrationConfig = {
   metadata: Record<string, string | number | null>;
   ultimo_erro: string | null;
   ultima_verificacao: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type SupplierComponentAttachment = { key: string; path: string };
+
+export type SupplierComponent = {
+  id: string;
+  owner_id: string;
+  supplier_id: string;
+  external_id: string;
+  nome: string;
+  familia: string | null;
+  codigo: string | null;
+  anexos: SupplierComponentAttachment[];
+  sincronizado_em: string;
   created_at: string;
   updated_at: string;
 };
@@ -819,6 +835,12 @@ export type Database = {
         Row: IntegrationConfig;
         Insert: Partial<IntegrationConfig>;
         Update: Partial<IntegrationConfig>;
+        Relationships: [];
+      };
+      supplier_components: {
+        Row: SupplierComponent;
+        Insert: Partial<SupplierComponent>;
+        Update: Partial<SupplierComponent>;
         Relationships: [];
       };
     };

@@ -67,6 +67,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: "/estoque/reservas", label: "Reservas", icon: "🔒", ready: true },
       { href: "/compras", label: "Compras", icon: "🛒", ready: true },
       { href: "/fornecedores", label: "Fornecedores", icon: "🚚", ready: true },
+      { href: "/estoque/catalogo-fornecedores", label: "Catálogo de Fornecedores", icon: "🌐", ready: true },
     ],
   },
   {
