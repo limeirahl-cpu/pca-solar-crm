@@ -1,20 +1,30 @@
 "use client";
 
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 
 export type BarChartPoint = { label: string; value: number; color?: string };
 
 const DEFAULT_COLOR = "#f9700e"; // laranja da marca (--primary)
 
+function formatValue(value: number, format: "number" | "currency") {
+  return format === "currency" ? formatCurrency(value) : value.toLocaleString("pt-BR");
+}
+
 export function DashboardBarChart({
   data,
-  valueFormatter,
+  format = "number",
   height = 240,
   className,
 }: {
   data: BarChartPoint[];
-  valueFormatter?: (value: number) => string;
+  /**
+   * Usa uma string em vez de receber uma função pronta: componentes de
+   * servidor não podem passar funções como prop para componentes de
+   * cliente (a serialização quebra em produção), então formatamos aqui
+   * dentro a partir de uma opção simples.
+   */
+  format?: "number" | "currency";
   height?: number;
   className?: string;
 }) {
@@ -49,7 +59,7 @@ export function DashboardBarChart({
             allowDecimals={false}
           />
           <Tooltip
-            formatter={(value) => (valueFormatter ? valueFormatter(Number(value)) : String(value))}
+            formatter={(value) => formatValue(Number(value), format)}
             contentStyle={{
               borderRadius: 10,
               border: "1px solid var(--border)",

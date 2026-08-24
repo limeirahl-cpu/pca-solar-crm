@@ -276,7 +276,7 @@ export default async function DashboardPage() {
         <Card>
           <CardHeader title="Financeiro" subtitle="Pendente no momento" />
           <CardBody>
-            <DashboardBarChart data={financeiroChart} valueFormatter={formatCurrency} height={260} />
+            <DashboardBarChart data={financeiroChart} format="currency" height={260} />
           </CardBody>
         </Card>
       </div>
