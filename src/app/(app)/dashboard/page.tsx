@@ -7,6 +7,9 @@ import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { FUNIL_STAGE_LABEL, FUNIL_STAGE_TONE } from "@/lib/funil";
+import { isEstoqueBaixo } from "@/lib/estoque";
+import { isVencido } from "@/lib/financeiro";
+import { isCheckinAtrasado } from "@/lib/monitoramento";
 import type { Lead, Task } from "@/lib/database.types";
 
 const PLANT_STATUS_LABEL: Record<string, string> = {
@@ -15,12 +18,7 @@ const PLANT_STATUS_LABEL: Record<string, string> = {
   inativa: "🔴 Offline",
 };
 
-const PROXIMOS_MODULOS = [
-  { label: "Financeiro", phase: "Fase 12" },
-  { label: "Estoque", phase: "Fase 10" },
-  { label: "Projetos & Homologação", phase: "Fases 6-7" },
-  { label: "Marketing", phase: "Fase 19" },
-];
+const PROXIMOS_MODULOS = [{ label: "Integrações oficiais", phase: "Fase 10" }];
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -45,6 +43,12 @@ export default async function DashboardPage() {
     { count: tarefasAtrasadas },
     { data: leadsRecentes },
     { data: tarefasProximas },
+    { data: produtos },
+    { data: lancamentos },
+    { count: alertasAbertos },
+    { data: checkins },
+    { count: campanhasAtivas },
+    { count: postsAguardandoAprovacao },
   ] = await Promise.all([
     supabase.from("leads").select("id", { count: "exact", head: true }).gte("created_at", hojeInicioIso),
     supabase.from("leads").select("id", { count: "exact", head: true }).gte("created_at", mesInicioIso),
@@ -77,6 +81,15 @@ export default async function DashboardPage() {
       .eq("concluida", false)
       .order("data_vencimento", { ascending: true })
       .limit(5),
+    supabase.from("products").select("id, estoque_atual, estoque_minimo, valor_unitario"),
+    supabase.from("financial_entries").select("id, tipo, valor, status, data_vencimento"),
+    supabase.from("plant_alerts").select("id", { count: "exact", head: true }).eq("status", "aberto"),
+    supabase.from("post_sale_checkins").select("id, data_prevista, status").eq("status", "pendente"),
+    supabase.from("marketing_campaigns").select("id", { count: "exact", head: true }).eq("status", "ativa"),
+    supabase
+      .from("marketing_posts")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "aguardando_aprovacao"),
   ]);
 
   const valorEmAberto = (orcamentosPendentes ?? []).reduce(
@@ -93,6 +106,29 @@ export default async function DashboardPage() {
     (sum, r: { geracao_kwh: number | null }) => sum + (r.geracao_kwh ?? 0),
     0
   );
+
+  const produtosList = produtos ?? [];
+  const produtosEstoqueBaixo = produtosList.filter((p) =>
+    isEstoqueBaixo(p.estoque_atual, p.estoque_minimo)
+  ).length;
+  const valorEmEstoque = produtosList.reduce(
+    (sum, p) => sum + p.estoque_atual * (p.valor_unitario ?? 0),
+    0
+  );
+
+  const lancamentosList = lancamentos ?? [];
+  const aReceberPendente = lancamentosList
+    .filter((l) => l.tipo === "receita" && l.status === "pendente")
+    .reduce((sum, l) => sum + l.valor, 0);
+  const aPagarPendente = lancamentosList
+    .filter((l) => l.tipo === "despesa" && l.status === "pendente")
+    .reduce((sum, l) => sum + l.valor, 0);
+  const lancamentosVencidos = lancamentosList.filter((l) => isVencido(l.data_vencimento, l.status)).length;
+
+  const checkinsList = checkins ?? [];
+  const checkinsAtrasados = checkinsList.filter((c) =>
+    isCheckinAtrasado(c.data_prevista, c.status)
+  ).length;
 
   return (
     <div className="space-y-8">
@@ -134,6 +170,61 @@ export default async function DashboardPage() {
           />
           <StatCard label="Tarefas pendentes" value={String(tarefasPendentes ?? 0)} />
           <StatCard label="Tarefas atrasadas" value={String(tarefasAtrasadas ?? 0)} />
+        </div>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">Estoque</h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard label="Produtos cadastrados" value={String(produtosList.length)} />
+          <StatCard
+            label="Estoque baixo"
+            value={String(produtosEstoqueBaixo)}
+            tone={produtosEstoqueBaixo > 0 ? "primary" : "default"}
+          />
+          <StatCard label="Valor em estoque" value={formatCurrency(valorEmEstoque)} tone="accent" />
+        </div>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">Financeiro</h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard label="A receber (pendente)" value={formatCurrency(aReceberPendente)} tone="primary" />
+          <StatCard label="A pagar (pendente)" value={formatCurrency(aPagarPendente)} />
+          <StatCard
+            label="Lançamentos vencidos"
+            value={String(lancamentosVencidos)}
+            tone={lancamentosVencidos > 0 ? "primary" : "default"}
+          />
+        </div>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">Pós-venda &amp; Monitoramento</h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            label="Alertas abertos"
+            value={String(alertasAbertos ?? 0)}
+            tone={(alertasAbertos ?? 0) > 0 ? "primary" : "default"}
+          />
+          <StatCard label="Contatos de pós-venda pendentes" value={String(checkinsList.length)} />
+          <StatCard
+            label="Contatos atrasados"
+            value={String(checkinsAtrasados)}
+            tone={checkinsAtrasados > 0 ? "primary" : "default"}
+          />
+        </div>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">Marketing</h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard label="Campanhas ativas" value={String(campanhasAtivas ?? 0)} tone="primary" />
+          <StatCard
+            label="Posts aguardando aprovação"
+            value={String(postsAguardandoAprovacao ?? 0)}
+            tone={(postsAguardandoAprovacao ?? 0) > 0 ? "primary" : "default"}
+          />
         </div>
       </section>
 

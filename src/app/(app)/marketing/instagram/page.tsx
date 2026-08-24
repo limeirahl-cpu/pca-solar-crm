@@ -5,7 +5,7 @@ export default function Page() {
     <ComingSoon
       title="Instagram"
       description="Integração futura com a API oficial da Meta/Instagram."
-      phase="Fase 19/20 — Marketing e IA"
+      phase="Fase 10 — Integrações oficiais"
     />
   );
 }

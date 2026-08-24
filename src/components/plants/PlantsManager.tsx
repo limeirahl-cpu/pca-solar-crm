@@ -110,7 +110,8 @@ export function PlantsManager({
     if (error) {
       setError(error.message);
     } else if (data) {
-      setPlants((prev) => [data, ...prev]);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setPlants((prev) => [data as any as PlantWithClient, ...prev]);
       setModalOpen(false);
       router.refresh();
     }

@@ -113,6 +113,11 @@ export function ClientDetail({
           subtitle={client.tipo_pessoa === "juridica" ? "Pessoa jurídica" : "Pessoa física"}
           action={
             <div className="flex gap-2">
+              <Link href={`/simulador?client_id=${client.id}`}>
+                <Button size="sm" variant="outline">
+                  Simular sistema
+                </Button>
+              </Link>
               <Link href={`/orcamentos/novo?client_id=${client.id}`}>
                 <Button size="sm" variant="secondary">
                   + Orçamento
@@ -121,6 +126,16 @@ export function ClientDetail({
               <Link href={`/usinas?novo=1&client_id=${client.id}`}>
                 <Button size="sm" variant="outline">
                   + Usina
+                </Button>
+              </Link>
+              <Link href={`/ordens-servico?novo=1&client_id=${client.id}`}>
+                <Button size="sm" variant="outline">
+                  + O.S.
+                </Button>
+              </Link>
+              <Link href={`/pos-venda?client_id=${client.id}`}>
+                <Button size="sm" variant="outline">
+                  Pós-venda
                 </Button>
               </Link>
               <Button size="sm" variant="outline" onClick={() => setEditing((v) => !v)}>

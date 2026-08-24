@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Interaction, InteractionTipo, Lead, LeadStatus, Task } from "@/lib/database.types";
@@ -122,6 +123,11 @@ export function LeadDetail({
                   </option>
                 ))}
               </Select>
+              <Link href={`/simulador?lead_id=${current.id}`}>
+                <Button size="sm" variant="outline">
+                  Simular sistema
+                </Button>
+              </Link>
               <Button size="sm" variant="secondary" disabled={converting} onClick={handleConvert}>
                 {converting ? "Convertendo..." : "Converter em cliente"}
               </Button>

@@ -1,11 +1,18 @@
-import { ComingSoon } from "@/components/ui/ComingSoon";
+import { createClient } from "@/lib/supabase/server";
+import { PurchasesManager } from "@/components/estoque/PurchasesManager";
 
-export default function Page() {
+export default async function ComprasPage() {
+  const supabase = await createClient();
+  const [{ data: purchases }, { data: suppliers }] = await Promise.all([
+    supabase.from("purchases").select("*, suppliers(nome)").order("created_at", { ascending: false }),
+    supabase.from("suppliers").select("id, nome").order("nome"),
+  ]);
+
   return (
-    <ComingSoon
-      title="Compras"
-      description="Cotações, pedidos de compra e recebimentos."
-      phase="Fase 11 — Compras"
+    <PurchasesManager
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      initialPurchases={(purchases ?? []) as any}
+      suppliers={suppliers ?? []}
     />
   );
 }

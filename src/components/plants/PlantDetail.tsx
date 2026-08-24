@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import type { Plant, PlantLog, PlantStatus } from "@/lib/database.types";
+import type { Plant, PlantLog, PlantMonitoringConfig, PlantStatus } from "@/lib/database.types";
+import { MonitoringConfigCard } from "@/components/monitoramento/MonitoringConfigCard";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -28,7 +30,15 @@ const STATUS_OPTIONS: { value: PlantStatus; label: string; tone: "green" | "ambe
   { value: "inativa", label: "Inativa", tone: "red" },
 ];
 
-export function PlantDetail({ plant, logs }: { plant: PlantWithClient; logs: PlantLog[] }) {
+export function PlantDetail({
+  plant,
+  logs,
+  monitoringConfig,
+}: {
+  plant: PlantWithClient;
+  logs: PlantLog[];
+  monitoringConfig: PlantMonitoringConfig | null;
+}) {
   const router = useRouter();
   const supabase = createClient();
 
@@ -83,6 +93,16 @@ export function PlantDetail({ plant, logs }: { plant: PlantWithClient; logs: Pla
           subtitle={plant.clients?.nome ?? undefined}
           action={
             <div className="flex items-center gap-2">
+              <Link href={`/ordens-servico?novo=1&client_id=${plant.client_id}`}>
+                <Button size="sm" variant="outline">
+                  + O.S.
+                </Button>
+              </Link>
+              <Link href={`/usinas/alertas`}>
+                <Button size="sm" variant="outline">
+                  Ver alertas
+                </Button>
+              </Link>
               <Select value={status} onChange={(e) => handleStatusChange(e.target.value as PlantStatus)}>
                 {STATUS_OPTIONS.map((s) => (
                   <option key={s.value} value={s.value}>
@@ -115,6 +135,8 @@ export function PlantDetail({ plant, logs }: { plant: PlantWithClient; logs: Pla
           )}
         </CardBody>
       </Card>
+
+      <MonitoringConfigCard plantId={plant.id} initialConfig={monitoringConfig} />
 
       <Card>
         <CardHeader title="Histórico de geração" subtitle="Registros manuais de geração de energia" />
