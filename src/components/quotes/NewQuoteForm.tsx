@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { FieldGroup, Input, Select, Textarea } from "@/components/ui/Field";
 import { formatCurrency } from "@/lib/utils";
+import { FortlevKitSearch, resumoComponentes, type FortlevKit } from "@/components/fornecedores/FortlevKitSearch";
 
 type Option = { id: string; nome: string };
 
@@ -43,8 +44,25 @@ export function NewQuoteForm({
     { descricao: "Kit fotovoltaico (painéis + inversor)", quantidade: "1", valor_unitario: "" },
     { descricao: "Mão de obra e instalação", quantidade: "1", valor_unitario: "" },
   ]);
+  const [cidadeCotacao, setCidadeCotacao] = useState("");
+  const [fasesCotacao, setFasesCotacao] = useState("3");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  function handleSelecionarKitFortlev(kit: FortlevKit) {
+    setPotenciaKwp(String(kit.power));
+    setItems((prev) => {
+      const resto = prev.slice(1);
+      return [
+        {
+          descricao: `Kit fotovoltaico ${kit.power.toFixed(2)} kWp — ${resumoComponentes(kit)} (Fortlev Solar)`,
+          quantidade: "1",
+          valor_unitario: String(kit.final_price),
+        },
+        ...resto,
+      ];
+    });
+  }
 
   const total = useMemo(
     () =>
@@ -174,6 +192,33 @@ export function NewQuoteForm({
           <FieldGroup label="Observações">
             <Textarea value={observacoes} onChange={(e) => setObservacoes(e.target.value)} />
           </FieldGroup>
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardHeader
+          title="Cotação com fornecedor"
+          subtitle="Opcional — busca preço e equipamento reais para preencher o primeiro item automaticamente."
+        />
+        <CardBody className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <FieldGroup label="Cidade da instalação">
+              <Input value={cidadeCotacao} onChange={(e) => setCidadeCotacao(e.target.value)} />
+            </FieldGroup>
+            <FieldGroup label="Nº de fases">
+              <Select value={fasesCotacao} onChange={(e) => setFasesCotacao(e.target.value)}>
+                <option value="1">Monofásico</option>
+                <option value="2">Bifásico</option>
+                <option value="3">Trifásico</option>
+              </Select>
+            </FieldGroup>
+          </div>
+          <FortlevKitSearch
+            potenciaKwp={Number(potenciaKwp) || 0}
+            cidade={cidadeCotacao}
+            fases={Number(fasesCotacao)}
+            onSelectKit={handleSelecionarKitFortlev}
+          />
         </CardBody>
       </Card>
 

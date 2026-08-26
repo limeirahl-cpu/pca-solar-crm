@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { FieldGroup, Input, Select } from "@/components/ui/Field";
 import { formatCurrency } from "@/lib/utils";
+import { FortlevKitSearch, nomeComponente, resumoComponentes, type FortlevKit } from "@/components/fornecedores/FortlevKitSearch";
 
 type Option = { id: string; nome: string };
 
@@ -74,6 +75,18 @@ export function SimuladorForm({
   const [valorEstrutura, setValorEstrutura] = useState("");
   const [valorMaoObra, setValorMaoObra] = useState("");
   const [condicoesPagamento, setCondicoesPagamento] = useState("");
+  const [fortlevKit, setFortlevKit] = useState<FortlevKit | null>(null);
+
+  function handleSelecionarKitFortlev(kit: FortlevKit) {
+    setFortlevKit(kit);
+    const nomeModulo = nomeComponente(kit, "module");
+    const nomeInversor = nomeComponente(kit, "inverter");
+    if (nomeModulo) setMarcaModulo(`${nomeModulo} (Fortlev Solar)`);
+    if (nomeInversor) {
+      setInversorMarca("Fortlev Solar");
+      setInversorModelo(nomeInversor);
+    }
+  }
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -91,10 +104,31 @@ export function SimuladorForm({
 
   const itens = useMemo(() => {
     if (!resultado) return [];
+    const maoObra = Number(valorMaoObra) || 0;
+
+    // Se um kit da Fortlev foi selecionado, o preço dele já cobre módulos +
+    // inversor + estrutura (é um kit fechado) — só a mão de obra continua
+    // sendo um valor à parte, definido pela PCA Solar.
+    if (fortlevKit) {
+      return [
+        {
+          descricao: `Kit fotovoltaico ${fortlevKit.power.toFixed(2)} kWp — ${resumoComponentes(fortlevKit)} (Fortlev Solar)`,
+          quantidade: 1,
+          valor_unitario: fortlevKit.final_price,
+          valor_total: fortlevKit.final_price,
+        },
+        {
+          descricao: "Projeto, mão de obra e instalação",
+          quantidade: 1,
+          valor_unitario: maoObra,
+          valor_total: maoObra,
+        },
+      ];
+    }
+
     const modulos = Number(valorModuloUnit) || 0;
     const inversor = Number(valorInversor) || 0;
     const estrutura = Number(valorEstrutura) || 0;
-    const maoObra = Number(valorMaoObra) || 0;
     return [
       {
         descricao: `${resultado.quantidadeModulos}x módulo fotovoltaico ${potenciaModuloWp}Wp${marcaModulo ? ` (${marcaModulo})` : ""}`,
@@ -121,7 +155,18 @@ export function SimuladorForm({
         valor_total: maoObra,
       },
     ];
-  }, [resultado, valorModuloUnit, valorInversor, valorEstrutura, valorMaoObra, potenciaModuloWp, marcaModulo, inversorMarca, inversorModelo]);
+  }, [
+    resultado,
+    valorModuloUnit,
+    valorInversor,
+    valorEstrutura,
+    valorMaoObra,
+    potenciaModuloWp,
+    marcaModulo,
+    inversorMarca,
+    inversorModelo,
+    fortlevKit,
+  ]);
 
   const investimentoTotal = itens.reduce((sum, it) => sum + it.valor_total, 0);
   const paybackMeses =
@@ -350,23 +395,61 @@ export function SimuladorForm({
       )}
 
       {resultado && (
+        <FortlevKitSearch
+          potenciaKwp={resultado.potenciaRealKwp}
+          cidade={clienteCidade}
+          fases={TIPO_LIGACAO_FASES[tipoLigacao]}
+          onSelectKit={handleSelecionarKitFortlev}
+        />
+      )}
+
+      {resultado && (
         <Card>
-          <CardHeader title="Investimento" subtitle="Preencha os valores praticados pela PCA Solar" />
+          <CardHeader
+            title="Investimento"
+            subtitle={
+              fortlevKit
+                ? "Preço do kit vem da Fortlev Solar — só falta a mão de obra."
+                : "Preencha os valores praticados pela PCA Solar"
+            }
+          />
           <CardBody className="space-y-4">
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <FieldGroup label={`Valor unit. módulo (${resultado.quantidadeModulos}x)`}>
-                <Input type="number" step="0.01" value={valorModuloUnit} onChange={(e) => setValorModuloUnit(e.target.value)} />
-              </FieldGroup>
-              <FieldGroup label="Valor do inversor">
-                <Input type="number" step="0.01" value={valorInversor} onChange={(e) => setValorInversor(e.target.value)} />
-              </FieldGroup>
-              <FieldGroup label="Estrutura de fixação">
-                <Input type="number" step="0.01" value={valorEstrutura} onChange={(e) => setValorEstrutura(e.target.value)} />
-              </FieldGroup>
-              <FieldGroup label="Projeto e mão de obra">
+            {fortlevKit ? (
+              <div className="flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 p-3">
+                <div>
+                  <p className="text-sm font-medium text-foreground">
+                    Kit Fortlev Solar — {fortlevKit.power.toFixed(2)} kWp
+                  </p>
+                  <p className="text-xs text-muted">{resumoComponentes(fortlevKit)}</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <p className="text-base font-semibold text-primary">{formatCurrency(fortlevKit.final_price)}</p>
+                  <Button type="button" variant="outline" size="sm" onClick={() => setFortlevKit(null)}>
+                    Trocar
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <FieldGroup label={`Valor unit. módulo (${resultado.quantidadeModulos}x)`}>
+                  <Input type="number" step="0.01" value={valorModuloUnit} onChange={(e) => setValorModuloUnit(e.target.value)} />
+                </FieldGroup>
+                <FieldGroup label="Valor do inversor">
+                  <Input type="number" step="0.01" value={valorInversor} onChange={(e) => setValorInversor(e.target.value)} />
+                </FieldGroup>
+                <FieldGroup label="Estrutura de fixação">
+                  <Input type="number" step="0.01" value={valorEstrutura} onChange={(e) => setValorEstrutura(e.target.value)} />
+                </FieldGroup>
+                <FieldGroup label="Projeto e mão de obra">
+                  <Input type="number" step="0.01" value={valorMaoObra} onChange={(e) => setValorMaoObra(e.target.value)} />
+                </FieldGroup>
+              </div>
+            )}
+            {fortlevKit && (
+              <FieldGroup label="Projeto e mão de obra (à parte do kit)">
                 <Input type="number" step="0.01" value={valorMaoObra} onChange={(e) => setValorMaoObra(e.target.value)} />
               </FieldGroup>
-            </div>
+            )}
             <FieldGroup label="Condições de pagamento">
               <Input
                 value={condicoesPagamento}
